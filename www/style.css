@@ -1,0 +1,256 @@
+body {
+	margin: 0px;
+	font-family: "Arial", sans-serif;
+	background-color: rgb(235, 235, 235);
+	background-image: url('img/bg.jpg');
+}
+
+#loadingWrapper {
+	z-index: 999;
+	position: absolute;
+	top: 0px;
+	left: 0px;
+}
+
+#loading {
+	width: 100%;
+	height: 100%;
+	background-color: rgb(0, 0, 0);
+	opacity: 0.7;
+}
+
+#loginBox {
+	width: 90%;
+	max-width: 300px;
+	margin-left: auto;
+	margin-right: auto;
+	margin-top: 50px;
+	font-size: 0.9em;
+	font-weight: bold;
+	color: rgb(80, 80, 80);
+}
+
+#loginBox img {
+	width: 100%;
+	margin-bottom: 20px;
+}
+
+#loginBox input {
+	padding: 5px;
+	width: 100%;
+}
+
+#loginButton {
+	margin-bottom: 10px;
+}
+
+#loginError {
+	color: rgb(204, 0, 0);
+}
+
+.textinput {
+	border: 1px solid rgb(160, 160, 160);
+	margin-bottom: 10px;
+	color: rgb(80, 80, 80);
+}
+
+.button {
+	background: -webkit-gradient(linear, left top, left bottom, from(#CC0000), to(#A30000));
+	background: -moz-linear-gradient(top,  #CC0000,  #A30000);
+	filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='#CC0000', endColorstr='#A30000');
+	font-family: "Tahoma", "Arial", sans-serif;
+	font-weight: bold;
+	color: rgb(255, 255, 255);
+	outline: 1px solid rgb(128, 0, 0);
+	border: 1px solid rgb(240, 0, 0);
+}
+
+.loadingImg {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 16px;
+	height: 16px;
+	margin-top: -8px;
+	margin-left: -8px;
+}
+
+.categoryWrapper {
+	width: 100%;
+	background-color: white;
+}
+
+.category {
+	background-color: rgb(204, 0, 0);
+	padding: 5px;
+	text-align: center;
+	font-family: "Tahoma", "Arial", sans-serif;
+	font-weight: bold;
+	font-size: 1.2em;
+	color: rgb(255, 255, 255);
+}
+
+.forumList, .threadList, .postList {
+	border-collapse: collapse;
+	font-size: 0.9em;
+	width: 100%;
+}
+
+.forum, .subforum, .thread {
+	color: rgb(80, 80, 80);
+	background-color: rgb(255, 255, 255);
+	padding: 10px;
+	width: 100%;
+	height: 50px;
+	border-top: 2px solid rgb(220, 220, 220);
+}
+
+.forum td, .subforum td {
+	padding: 10px;
+}
+
+.threadInfo {
+	padding: 10px 10px 10px 5px;
+}
+
+.threadImg {
+	width: 25px;
+	padding: 10px 3px 10px 10px;
+}
+
+.forumImg {
+	width: 25px;
+	padding-right: 0px;
+}
+
+.newposts {
+	font-size: 0.7em;
+	color: red;
+	font-weight: bold;
+}
+
+.post {
+	width: 100%;
+	border-bottom: 2px solid rgb(200, 200, 200);
+	color: rgb(80, 80, 80);
+}
+
+.userdata {
+	overflow: hidden;
+	padding-bottom: 10px;
+	border-bottom: 1px solid rgb(200, 200, 200);
+	padding: 10px;
+	margin-bottom: 20px;
+	background-color: rgb(240, 240, 240);
+}
+
+.userdata img {
+	max-height: 50px;
+	max-width: 50px;
+}
+
+.avatar {
+	width: 50px;
+	height: 50px;
+	float: left;
+	margin-right: 15px;
+	text-align: center;
+}
+
+span.username {
+	font-weight: bold;
+}
+
+span.userinfo, span.postdate {
+	font-size: 0.8em;
+}
+
+.postData {
+	padding: 10px 10px 20px 10px;
+}
+
+.postData img {
+	max-width: 90%;
+}
+
+.postRatings {
+	overflow: hidden;
+	padding: 5px;
+	background-color: rgb(240, 240, 240);
+}
+
+.rating {
+	float: left;
+	font-size: 0.8em;
+	margin-right: 10px;
+}
+
+.rating img {
+	width: 12px;
+	height: 12px;
+}
+
+#replyForm {
+	width: 100%;
+	background-color: rgb(204, 0, 0);
+}
+
+#replyField {
+	width: 100%;
+	padding: 10px;
+	height: 150px;
+	clear: both;
+	border-left: 3px solid rgb(204, 0, 0);
+	border-right: 3px solid rgb(204, 0, 0);
+	border-top: 1px solid rgb(204, 0, 0);
+	border-bottom: 1px solid rgb(204, 0, 0);
+}
+
+#replyButton {
+	width: 100%;
+	padding: 10px 0px 10px 0px;
+	position: relative;
+	top: 1px;
+}
+
+/* FP Stylings below this line, god help you */
+
+span.highlight {
+	font-weight: bold;
+	color: red;
+}
+
+.postData a, .postData a:visited {
+	color: #38D;
+	text-decoration: underline;
+}
+
+.postData a:hover {
+	color: #14F;
+	text-decoration: underline;
+}
+
+.quote {
+	margin: 10px 10px 15px 10px;
+	border: 1px solid #888;
+	display: table;
+}
+
+.quote .message, .quote .information {
+	background-color: #BDF;
+	padding: 10px;
+	font-size: 0.8em;
+}
+
+.quote .information {
+	padding: 4px;
+	font-size: 1.1em;
+	background-color: #ACE;
+}
+
+.information a {
+	color: #05A;
+	text-decoration: none;
+	font-size: 1.1em;
+	font-weight: bold;
+}
