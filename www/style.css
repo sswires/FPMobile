@@ -5,6 +5,13 @@ body {
 	background-image: url('img/bg.jpg');
 }
 
+#backbutton {
+	background-image: url('img/back.png');
+	background-repeat: no-repeat;
+	background-position: left center;
+	padding-left: 40px;
+}
+
 #loadingWrapper {
 	z-index: 999;
 	position: absolute;
@@ -253,4 +260,15 @@ span.highlight {
 	text-decoration: none;
 	font-size: 1.1em;
 	font-weight: bold;
+}
+
+.bbcode_code {
+	margin-bottom: 15px;
+	padding: 6px;
+	border: 1px inset;
+	text-align: left;
+	overflow: scroll;
+	direction: ltr;
+	background: #F2F6F8 none repeat-x;
+	font-size: 13.333px;
 }

@@ -1,0 +1,15 @@
+Added:
+- Thread/forum page navigation (Hexxeh)
+- Back button (Code by Hexxeh, icon by kopimi)
+- "_ New Posts!" notification
+- Locked/Stickied thread styling
+- Push Notifications for iOS (Hexxeh)
+- Auto-login (Hexxeh)
+
+Fixed:
+- Bug which caused thread data to be output twice
+
+Changed:
+- Removed redundant code (getSubforum removed), getForum now has support for 
+  pages and subforums (Hexxeh)
+- Changed padding for list items to make better use of limited screen space

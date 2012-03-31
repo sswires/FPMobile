@@ -1,46 +1,57 @@
 function FPInterface()
 {
 	this.apiURL = "http://api.facepun.ch/";
+	this.apiKey = false;
 	this.authed = false;
 	this.username = false;
 	this.password = false;
+	this.userid = false;
+	this.pagestack = new Array();
 	this.forums = new Array();
+	
+	this.SUPPORT_PUSH = false; // Does target device support Airship Push notifications?
 	
 	var fp = this;
 	
 	// Add event listeners to non-unique clickable objects
 	$(".thread").live('click', function() {
-		fp.getThread(this.getAttribute("thread"), this.getAttribute("pages"));
+		var page = 1;
+		if (this.getAttribute("status") == "old" || this.getAttribute("hasNewPosts") == "true")
+		{
+			page = this.getAttribute("pages");
+		}
+		
+		fp.getThread(this.getAttribute("thread"), page);
 	});
 	
 	$(".forum").live('click', function() {
-		fp.getForum(this.getAttribute("forum"), this.getAttribute("category"));
+		fp.getForum(fp.getForumByID(this.getAttribute("forum")), 1);
 	});
 	
-	$(".subforum").live('click', function() {
-		fp.getSubforum(this.getAttribute("subforum"));
+	$(".forumpage").live('change', function() {
+		fp.pagestack.pop();
+		fp.getForum(fp.getForumByID(this.getAttribute("forum")), $(this).val());
 	});
-	
-	// Save ratings and filenames
-	this.ratings = new Array();
-	this.ratings["agree"] = "http://www.facepunch.com/fp/ratings/tick.png";
-	this.ratings["disagree"] = "http://www.facepunch.com/fp/ratings/cross.png";
-	this.ratings["funny"] = "http://www.facepunch.com/fp/ratings/funny2.png";
-	this.ratings["winner"] = "http://www.facepunch.com/fp/ratings/winner.png";
-	this.ratings["zing"] = "http://www.facepunch.com/fp/ratings/zing.png";
-	this.ratings["informative"] = "http://www.facepunch.com/fp/ratings/information.png";
-	this.ratings["optimistic"] = "http://www.facepunch.com/fp/ratings/heart.png";
-	this.ratings["dumb"] = "http://www.facepunch.com/fp/ratings/box.png";
-	this.ratings["late"] = "http://www.facepunch.com/fp/ratings/clock.png";
-	this.ratings["artistic"] = "http://www.facepunch.com/fp/ratings/palette.png";
-	this.ratings["programming_king"] = "http://www.facepunch.com/fp/ratings/programming_king.png";
-	this.ratings["friendly"] = "http://www.facepunch.com/fp/ratings/heart.png";
-	this.ratings["smarked"] = "http://www.facepunch.com/fp/ratings/weed.png";
-	this.ratings["moustache"] = "http://www.facepunch.com/fp/ratings/moustache.png";
-	this.ratings["lua_king"] = "http://www.facepunch.com/fp/ratings/lua_king.png";
-	this.ratings["mapping_king"] = "http://www.facepunch.com/fp/ratings/mapping_king.png ";
-	this.ratings["lua_helper"] = "http://www.facepunch.com/fp/ratings/lua_helper.png";
-	this.ratings["useful"] = "http://www.facepunch.com/fp/ratings/wrench.png";
+
+	$(".threadpage").live('change', function() {
+		fp.getThread(this.getAttribute("thread"), $(this).val());
+	});
+
+	$("#backbutton").live('click', function() {
+		var parentforum = this.getAttribute("parentforum");
+		
+		if(parentforum != "top")
+		{
+			var parentforum = fp.getForumByID(parentforum);
+			var newpage = fp.pagestack.pop();
+			fp.getForum(parentforum, newpage);
+		}
+		else
+		{
+			fp.pagestack.pop();
+			fp.viewFrontPage();
+		}
+	});
 }
 
 FPInterface.prototype.APIRequest = function(action, get, post, callback)
@@ -135,10 +146,25 @@ FPInterface.prototype.login = function(user, pass)
 		{
 			console.log("Successfully logged in client: " + user);
 			fp.authed = true;
+			fp.userid = data.userid;
+			
+			// Save user/pass to device's local storage
+			localStorage.username = user;
+			localStorage.password = pass;
+			
+			// Init Push Notifications if supported
+			if (this.SUPPORT_PUSH)
+			{
+				AirshipPush.init();
+			}
+			
 			fp.getFrontPage();
 		}
 		else
 		{
+			delete localStorage.username;
+            delete localStorage.password;
+			
 			fp.hideLoading();
 			$("#loginError").html("Invalid username/password combination!");
 			console.log("Failed login attempt: Invalid user/pass combo!");
@@ -164,13 +190,38 @@ FPInterface.prototype.attemptLogin = function()
 FPInterface.prototype.getLoginPage = function()
 {
 	this.showLoading();
-	var content = "<div id='loginBox'><img src='img/logo.png' alt=''/>Username:<br/><input type='text' id='usernameInput' class='textinput'/><br/>Password:<br/><input type='password' id='passwordInput' class='textinput'/><br/><input type='submit' value='Login' id='loginButton' class='button' style='padding: 10px; margin-top: 5px;'/><span id='loginError'></span></div>";
+	
+    var username_html = '';
+    var password_html = '';
+    var autologin = false;
+	
+	if (typeof Storage !== "undefined")
+	{
+	   if (localStorage.username && localStorage.password)
+	   {
+	       username_html = ' value="' + localStorage.username + '"';
+	       password_html = ' value="' + localStorage.password + '"';
+	       autologin = true;
+	   }
+	}
+	
+	var content = "<div id='loginBox'><img src='img/logo.png' alt=''/>Username:<br/><input type='text' id='usernameInput' class='textinput'" + username_html + "/><br/>Password:<br/><input type='password' id='passwordInput' class='textinput'" + password_html + "/><br/><input type='submit' value='Login' id='loginButton' class='button' style='padding: 10px; margin-top: 5px;'/><span id='loginError'></span></div>";
 	var fp = this;
+	
 	$("#main").html(content);
+	
 	$("#loginButton").click(function() {
 		fp.attemptLogin();
 	});
-	this.hideLoading();
+	
+	if (autologin)
+	{
+	   fp.attemptLogin();
+	}
+	else
+	{
+	   this.hideLoading();
+	}
 }
 
 FPInterface.prototype.loadFrontPage = function()
@@ -198,18 +249,18 @@ FPInterface.prototype.viewFrontPage = function()
 		$.each(val["forums"], function(key, val) {
 			if (toggle)
 			{
-				$("#cat" + category).append("<tr class='forum' forum='" + key + "' category='" + category + "' style='background-color: rgb(245, 245, 245);'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
+				$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "' style='background-color: rgb(245, 245, 245);'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
 			}
 			else
 			{
 				if (borderTop)
 				{
-					$("#cat" + category).append("<tr class='forum' forum='" + key + "' category='" + category + "' style='border: none;'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
+					$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "' style='border: none;'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
 					borderTop = false;
 				}
 				else
 				{
-					$("#cat" + category).append("<tr class='forum' forum='" + key + "' category='" + category + "'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
+					$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
 				}
 			}
 			
@@ -226,36 +277,76 @@ FPInterface.prototype.getFrontPage = function()
 	this.loadFrontPage();
 }
 
-FPInterface.prototype.getForum = function(forum, category)
+FPInterface.prototype.getForumByID = function(forumid)
+{
+    var result = false;
+	
+	$.each(this.forums, function(key, val) {
+		$.each(val.forums, function(key2, val2) {
+			if (val2.id == forumid)
+			{
+				result = val2;
+				result.parent = false;
+				return true;
+			}
+			if (typeof val2.forums != "undefined")
+			{
+				$.each(val2.forums, function(key3, val3){
+					if(val3.id == forumid)
+					{
+						result = val3;
+						result.parent = val2.id;
+						return true;
+					}
+				});
+			}
+		});
+	});
+
+	return result;
+}
+
+FPInterface.prototype.getForum = function(forum, page)
 {
 	this.showLoading();
-
 	$("#main").html(""); // Clear frame so we can load new view
-	var fp = this;
-	var forumID = this.forums[category]["forums"][forum].id;
 	
-	if (typeof this.forums[category]["forums"][forum]["forums"] != "undefined")
+	var fp = this;
+	var forumID = forum.id;
+	
+	fp.pagestack.push(page);
+	
+	if (forum.parent)
 	{
-		$("#main").append("<div class='categoryWrapper'><div class='category'>Subforums</div><table class='forumList' id='subforums'></div>");
+		parent = forum.parent;
+	}
+	else
+	{
+		parent = "top";
+	}
+	
+	if (typeof forum["forums"] != "undefined")
+	{
+		$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + parent + "'>Subforums</div><table class='forumList' id='subforums'></div>");
 		
 		// Loop through subforums and display them!
 		var toggle = false; // Used as a toggle switch to make every other entry a different color
 		var borderTop = true; // One-time switch used to make the top list element have no borders
-		$.each(this.forums[category]["forums"][forum]["forums"], function(key, val) {
+		$.each(forum["forums"], function(key, val) {
 			if (toggle)
 			{
-				$("#subforums").append("<tr class='subforum' subforum='" + val.id + "' style='background-color: rgb(245, 245, 245);'><td>" + val.name + "</td></tr>");
+				$("#subforums").append("<tr class='forum' forum='" + val.id + "' style='background-color: rgb(245, 245, 245);'><td>" + val.name + "</td></tr>");
 			}
 			else
 			{
 				if (borderTop)
 				{
-					$("#subforums").append("<tr class='subforum' subforum='" + val.id + "' style='border: none;'><td>" + val.name + "</td></tr>");
+					$("#subforums").append("<tr class='forum' forum='" + val.id + "' style='border: none;'><td>" + val.name + "</td></tr>");
 					borderTop = false;
 				}
 				else
 				{
-					$("#subforums").append("<tr class='subforum' subforum='" + val.id + "'><td>" + val.name + "</td></tr>");
+					$("#subforums").append("<tr class='forum' forum='" + val.id + "'><td>" + val.name + "</td></tr>");
 				}
 			}
 			
@@ -267,12 +358,13 @@ FPInterface.prototype.getForum = function(forum, category)
 	var madeThreadCat = false;
 	
 	// Handle the threads
-	this.APIRequest("getthreads", {"forum_id" : forumID, "page" : 1}, 0, function(data) {
+	this.APIRequest("getthreads", {"forum_id" : forumID, "page" : page}, 0, function(data) {
 		console.log("Successfully loaded threads from forum: " + forumID);
+		
 		if (!madeThreadCat)
 		{
 			// Create a new category with the name of the forum
-			$("#main").append("<div class='categoryWrapper'><div class='category'>" + data.title + "</div><table class='threadList' id='threads'></div>");
+			$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
 			
 			var toggle = false; // Used as a toggle switch to make every other entry a different color
 			var borderTop = true; // One-time switch used to make the top list element have no borders
@@ -282,7 +374,7 @@ FPInterface.prototype.getForum = function(forum, category)
 				var style = false;
 				if (val.status == "sticky")
 				{
-					style = "background-color: #FFA; border-top: 2px solid rgb(225, 225, 140); font-weight: bold;";
+					style = "background-color: #FFA; border-top: 2px solid rgb(225, 225, 140); font-weight: bold; color: rgb(140, 140, 140);";
 				}
 				else if (val.locked)
 				{
@@ -306,106 +398,48 @@ FPInterface.prototype.getForum = function(forum, category)
 				
 				if (style != false)
 				{
+					var status = "status='" + val.status + "'";
+					var hasNewPosts = " ";
+					var newposts = "";
 					if (typeof val.newposts != "undefined")
 					{
-						$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' style='" + style + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/><span class='newposts'>" + val.newposts + " new posts!</span></td></tr>");
+						hasNewPosts = " hasNewPosts='true' ";
+						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
 					}
-					else
-					{
-						$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' style='" + style + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "</td></tr>");
-					}
+					
+					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "style='" + style + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
 				}
 				else
 				{
+					var status = "status='" + val.status + "'";
+					var hasNewPosts = " ";
+					var newposts = "";
 					if (typeof val.newposts != "undefined")
 					{
-						$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/><span class='newposts'>" + val.newposts + " new posts!</span></td></tr>");
+						hasNewPosts = " hasNewPosts='true' ";
+						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
 					}
-					else
-					{
-						$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "</td></tr>");
-					}
+					
+					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
 				}
 				
 				toggle = !toggle; // Reverse the toggle
 			});
 		}
 		
-		fp.hideLoading();
-	});
-}
-
-/*
-*	I'm a lazy cunt so if Garry starts adding subforums to subforums
-*	then I'm going to have a lot of work to do.
-*/
-FPInterface.prototype.getSubforum = function(forum)
-{
-	this.showLoading();
-	var fp = this;
-	
-	$("#main").html(""); // Clear the frame for our new content
-
-	// Handle the threads
-	this.APIRequest("getthreads", {"forum_id" : forum, "page" : 1}, 0, function(data) {
-		// Create a new category with the name of the forum
-		$("#main").append("<div class='categoryWrapper'><div class='category'>" + data.title + "</div><table class='threadList' id='threads'></div>");
+		$("#main").append("<div class='categoryWrapper'><div class='category'><select forum='" + forumID + "' class='forumpage'></select></div></div>");
 		
-		var toggle = false; // Used as a toggle switch to make every other entry a different color
-		var borderTop = true; // One-time switch used to make the top list element have no borders
-		
-		// Loop through threads and display them
-		$.each(data["threads"], function(key, val) {
-			var style = false;
-			if (val.status == "sticky")
+		for (i = 1; i <= data.numpages; i++)
+		{
+			if (i == page)
 			{
-				style = "background-color: #FFA; border-top: 2px solid rgb(225, 225, 140); font-weight: bold;";
-			}
-			else if (val.locked)
-			{
-				style = "background-color: rgb(230, 230, 230); color: rgb(120, 120, 120);";
-			}
-			else if (toggle)
-			{
-				style = "background-color: rgb(245, 245, 245);";
-			}
-			
-			if (borderTop)
-			{
-				if (style != false)
-				{
-					style.replace("border-top: 2px solid rgb(225, 225, 140);", "");
-				}
-					
-				style = style + "border-top: none";
-				borderTop = false;
-			}
-			
-			if (style != false)
-			{
-				if (typeof val.newposts != "undefined")
-				{
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' style='" + style + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/><span class='newposts'>" + val.newposts + " new posts!</span></td></tr>");
-				}
-				else
-				{
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' style='" + style + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "</td></tr>");
-				}
+				$(".forumpage").append("<option selected='selected'>" + i + "</option>");
 			}
 			else
 			{
-				if (typeof val.newposts != "undefined")
-				{
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/><span class='newposts'>" + val.newposts + " new posts!</span></td></tr>");
-				}
-				else
-				{
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "</td></tr>");
-				}
+				$(".forumpage").append("<option>" + i + "</option>");
 			}
-			
-			toggle = !toggle; // Reverse the toggle
-		});
+		}
 		
 		fp.hideLoading();
 	});
@@ -414,14 +448,17 @@ FPInterface.prototype.getSubforum = function(forum)
 FPInterface.prototype.getThread = function(thread, page)
 {
 	var fp = this;
+	var rawPage = page;
 	this.showLoading();
 	
 	$("#main").html(""); // Clear the frame for our new content
 	
 	// Handle posts
 	this.APIRequest("getposts", {"thread_id" : thread, "page" : page}, 0, function(data) {
+		page = data.currpage;
+		
 		// Create a new category with the name of the forum
-		$("#main").append("<div class='categoryWrapper'><div class='category'>" + data.title + "</div><table class='postList' id='posts'></div>");
+		$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + data.forumid + "'>" + data.title + "</div><table class='postList' id='posts'></div>");
 		
 		// Loop through posts and display them
 		$.each(data["posts"], function(key, val) {
@@ -454,10 +491,24 @@ FPInterface.prototype.getThread = function(thread, page)
 			if (typeof val.ratings != "undefined")
 			{
 				$.each(val.ratings, function(key, val) {
-					$("#ratings" + postID).append("<div class='rating'><img src='" + fp.ratings[key] + "' alt=''/> x " + val + "</div>");
+					$("#ratings" + postID).append("<div class='rating'><img src='img/rating/" + key + ".png' alt=''/> x " + val + "</div>");
 				});
 			}
 		});
+		
+		$("#main").append("<div class='categoryWrapper'><div class='category'><select thread='" + thread + "' class='threadpage'></select></div></div>");
+		
+		for (i = 1; i <= data.numpages; i++)
+		{
+			if (i == rawPage)
+			{
+				$(".threadpage").append("<option selected='selected'>" + i + "</option>");
+			}
+			else
+			{
+				$(".threadpage").append("<option>" + i + "</option>");
+			}
+		}
 		
 		// Add "Post Reply" field
 		$("#main").append("<div class='categoryWrapper'><div class='category'>Post Reply</div><div id='replyForm'><textarea id='replyField'></textarea><input type='submit' value='Submit Reply' class='button' id='replyButton'/></div></div>");
@@ -491,29 +542,3 @@ FPInterface.prototype.submitPost = function(content, thread)
 		console.log("Failed to make post: Content/ThreadID invalid!");
 	}
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
