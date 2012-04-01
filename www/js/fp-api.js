@@ -1,6 +1,6 @@
 function FPInterface()
 {
-	this.apiURL = "http://api.facepun.ch/";
+	this.apiURL = "http://sandbox.facepun.ch/";
 	this.apiKey = false;
 	this.authed = false;
 	this.username = false;
@@ -10,6 +10,7 @@ function FPInterface()
 	this.forums = new Array();
 	
 	this.SUPPORT_PUSH = false; // Does target device support Airship Push notifications?
+	this.SUPPORT_BACKBUTTON = false; // Does the device have a hardware back-button?
 	
 	var fp = this;
 	
@@ -37,14 +38,36 @@ function FPInterface()
 		fp.getThread(this.getAttribute("thread"), $(this).val());
 	});
 
+	$("#replyButton").live('click', function() {
+		fp.submitPost($("#replyField").val(), this.getAttribute("thread"), this.getAttribute("page"));
+		$("#replyButton").attr("value", "Posting...");
+	});
+	
+	// Back button listeners
+	if (this.SUPPORT_BACKBUTTON)
+	{
+		document.addEventListener("backbutton", function() {
+			if (fp.parentForum != "top")
+			{
+				fp.parentForum = fp.getForumByID(fp.parentForum);
+				var newpage = fp.pagestack.pop();
+				fp.getForum(fp.parentForum, newpage);
+			}
+			else
+			{
+				fp.pagestack.pop();
+				fp.viewFrontPage();
+			}
+		}, false);
+	}
+	
 	$("#backbutton").live('click', function() {
-		var parentforum = this.getAttribute("parentforum");
-		
-		if(parentforum != "top")
+		if (fp.parentForum != "top")
 		{
-			var parentforum = fp.getForumByID(parentforum);
+			fp.parentForum = fp.getForumByID(fp.parentForum);
 			var newpage = fp.pagestack.pop();
-			fp.getForum(parentforum, newpage);
+			fp.getForum(fp.parentForum, newpage);
+			console.log("newforum");
 		}
 		else
 		{
@@ -92,12 +115,10 @@ FPInterface.prototype.APIRequest = function(action, get, post, callback)
 				if (typeof data.error != "undefined") // If we received an error response
 				{
 					console.log("FP-API Response Error: " + data.error);
-					alert("Something went wrong! Check JS logs for details!");
+					data = false;
 				}
-				else
-				{
-					callback(data); // Return our callback with the relevant data. Data is FALSE if error for easy checking.
-				}
+				
+				callback(data); // Return our callback with the relevant data. Data is FALSE if error for easy checking.
 			});
 		}
 		else
@@ -107,12 +128,10 @@ FPInterface.prototype.APIRequest = function(action, get, post, callback)
 				if (typeof data.error != "undefined") // If we received an error response
 				{
 					console.log("FP-API Response Error: " + data.error);
-					alert("Something went wrong! Check JS logs for details!");
+					data = false;
 				}
-				else
-				{
-					callback(data); // Return our callback with the relevant data. Data is FALSE if error for easy checking.
-				}
+				
+				callback(data); // Return our callback with the relevant data. Data is FALSE if error for easy checking.
 			}, "json");
 		}
 	}
@@ -137,7 +156,7 @@ FPInterface.prototype.hideLoading = function()
 FPInterface.prototype.login = function(user, pass)
 {
 	this.username = user;
-	this.password = hex_md5(pass);
+	this.password = pass;
 	var fp = this;
 	
 	this.showLoading();
@@ -169,7 +188,7 @@ FPInterface.prototype.login = function(user, pass)
 			$("#loginError").html("Invalid username/password combination!");
 			console.log("Failed login attempt: Invalid user/pass combo!");
 		}
-	})
+	});
 }
 
 FPInterface.prototype.attemptLogin = function()
@@ -179,7 +198,11 @@ FPInterface.prototype.attemptLogin = function()
 	
 	if (typeof user != "undefined" && typeof pass != "undefined")
 	{
-		this.login(user, pass);
+		this.username = user;
+		this.password = hex_md5(pass);
+		
+		this.showLoading();
+		this.getFrontPage();
 	}
 	else
 	{
@@ -191,18 +214,18 @@ FPInterface.prototype.getLoginPage = function()
 {
 	this.showLoading();
 	
-    var username_html = '';
-    var password_html = '';
-    var autologin = false;
+	var username_html = '';
+	var password_html = '';
+	var autologin = false;
 	
 	if (typeof Storage !== "undefined")
 	{
-	   if (localStorage.username && localStorage.password)
-	   {
-	       username_html = ' value="' + localStorage.username + '"';
-	       password_html = ' value="' + localStorage.password + '"';
-	       autologin = true;
-	   }
+		if (localStorage.username && localStorage.password)
+		{
+			username_html = ' value="' + localStorage.username + '"';
+			password_html = ' value="' + localStorage.password + '"';
+			autologin = true;
+		}
 	}
 	
 	var content = "<div id='loginBox'><img src='img/logo.png' alt=''/>Username:<br/><input type='text' id='usernameInput' class='textinput'" + username_html + "/><br/>Password:<br/><input type='password' id='passwordInput' class='textinput'" + password_html + "/><br/><input type='submit' value='Login' id='loginButton' class='button' style='padding: 10px; margin-top: 5px;'/><span id='loginError'></span></div>";
@@ -228,11 +251,18 @@ FPInterface.prototype.loadFrontPage = function()
 {
 	var fp = this;
 	this.APIRequest("getforums", 0, 0, function(data) {
-		$.each(data["categories"], function(key, val) {
-			fp.forums[key] = val; // Save forum dump
-		});
-		
-		fp.viewFrontPage();
+		if (data != false)
+		{
+			$.each(data["categories"], function(key, val) {
+				fp.forums[key] = val; // Save forum dump
+			});
+			
+			fp.viewFrontPage();
+		}
+		else
+		{
+			fp.login(fp.username, fp.password);
+		}
 	});
 }
 
@@ -327,6 +357,7 @@ FPInterface.prototype.getForum = function(forum, page)
 	
 	if (typeof forum["forums"] != "undefined")
 	{
+		fp.parentForum = parent;
 		$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + parent + "'>Subforums</div><table class='forumList' id='subforums'></div>");
 		
 		// Loop through subforums and display them!
@@ -361,6 +392,7 @@ FPInterface.prototype.getForum = function(forum, page)
 	this.APIRequest("getthreads", {"forum_id" : forumID, "page" : page}, 0, function(data) {
 		console.log("Successfully loaded threads from forum: " + forumID);
 		
+		fp.parentForum = parent;
 		if (!madeThreadCat)
 		{
 			// Create a new category with the name of the forum
@@ -391,6 +423,10 @@ FPInterface.prototype.getForum = function(forum, page)
 					{
 						style.replace("border-top: 2px solid rgb(225, 225, 140);", "");
 					}
+					else
+					{
+						style = "";
+					}
 					
 					style = style + "border-top: none";
 					borderTop = false;
@@ -407,7 +443,7 @@ FPInterface.prototype.getForum = function(forum, page)
 						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
 					}
 					
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "style='" + style + "'><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
+					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "style='" + style + "'><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
 				}
 				else
 				{
@@ -420,7 +456,7 @@ FPInterface.prototype.getForum = function(forum, page)
 						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
 					}
 					
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "><td class='threadImg'><img src='img/thread/" + val.icon.replace("fp/posticons/", "").replace("fp/vb/misc/", "").replace("/", "") + "' alt=''/></td><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
+					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
 				}
 				
 				toggle = !toggle; // Reverse the toggle
@@ -449,6 +485,8 @@ FPInterface.prototype.getThread = function(thread, page)
 {
 	var fp = this;
 	var rawPage = page;
+	var locked = false;
+	
 	this.showLoading();
 	
 	$("#main").html(""); // Clear the frame for our new content
@@ -456,33 +494,69 @@ FPInterface.prototype.getThread = function(thread, page)
 	// Handle posts
 	this.APIRequest("getposts", {"thread_id" : thread, "page" : page}, 0, function(data) {
 		page = data.currpage;
+		if (data.locked)
+		{
+			locked = true;
+		}
+		
+		fp.parentForum = data.forumid;
 		
 		// Create a new category with the name of the forum
 		$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + data.forumid + "'>" + data.title + "</div><table class='postList' id='posts'></div>");
 		
 		// Loop through posts and display them
 		$.each(data["posts"], function(key, val) {
+			var postBG = "";
+			var nameStyle = "";
+			
+			if (val.username.toLowerCase() == fp.username.toLowerCase()) // If it's our post
+			{
+				postBG = " style='background-image: url(\"img/post_yours.png\"); background-repeat: repeat-x;'";
+			}
+			else if (val.status == "new")
+			{
+				postBG = " style='background-image: url(\"img/post_new.png\"); background-repeat: repeat-x;'";
+			}
+			else if (val.status == "old")
+			{
+				postBG = " style='background-image: url(\"img/post_old.png\"); background-repeat: repeat-x;'";
+			}
+			
+			if (val.useronline)
+			{
+				nameStyle = " style='border-bottom: 2px dotted #0D0;'";
+			}
+			
 			if (typeof val.avatar != "undefined")
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div id='usertext'><span class='username'>" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div id='usertext'><span class='username'>" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
 				}
 			}
 			else
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'><td><div class='userdata'><div id='usertext'><span class='username'>" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'><td><div class='userdata'><div id='usertext'><span class='username'>" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
 				}
+			}
+			
+			if (val.username.toLowerCase() == fp.username.toLowerCase()) // If it's our post
+			{
+				$("#controls" + val.id).append("<input type='submit' value='Edit' class='editPostButton' id='edit" + val.id + "'/><br/><input type='submit' value='Quote' class='quotePostButton' id='quote" + val.id + "'/>");
+			}
+			else
+			{
+				$("#controls" + val.id).append("<input type='submit' value='Rate' class='ratePostButton' id='rate" + val.id + "'/><br/><input type='submit' value='Quote' class='quotePostButton' id='quote" + val.id + "'/>");
 			}
 			
 			var postID = val.id;
@@ -510,19 +584,17 @@ FPInterface.prototype.getThread = function(thread, page)
 			}
 		}
 		
-		// Add "Post Reply" field
-		$("#main").append("<div class='categoryWrapper'><div class='category'>Post Reply</div><div id='replyForm'><textarea id='replyField'></textarea><input type='submit' value='Submit Reply' class='button' id='replyButton'/></div></div>");
+		if (!locked)
+		{
+			// Add "Post Reply" field
+			$("#main").append("<div class='categoryWrapper'><div class='category'>Post Reply</div><div id='replyForm'><textarea id='replyField'></textarea><input type='submit' value='Submit Reply' class='button' id='replyButton' thread='" + thread + "' page='" + data.numpages + "'/></div></div>");
+		}
 		
 		fp.hideLoading();
-		
-		$("#replyButton").live('click', function() {
-			fp.submitPost($("#replyField").val(), thread);
-			$("#replyButton").attr("value", "Posting...");
-		});
 	});
 }
 
-FPInterface.prototype.submitPost = function(content, thread)
+FPInterface.prototype.submitPost = function(content, thread, page)
 {
 	var fp = this;
 
@@ -533,7 +605,7 @@ FPInterface.prototype.submitPost = function(content, thread)
 			if (data.reply == "OK")
 			{
 				console.log("Post successful in thread: " + thread);
-				fp.getThread(thread);
+				fp.getThread(thread, page);
 			}
 		});
 	}

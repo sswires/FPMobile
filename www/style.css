@@ -2,7 +2,6 @@ body {
 	margin: 0px;
 	font-family: "Arial", sans-serif;
 	background-color: rgb(235, 235, 235);
-	background-image: url('img/bg.jpg');
 }
 
 #backbutton {
@@ -116,8 +115,12 @@ body {
 	padding: 10px;
 }
 
+.post td {
+	padding: 0px;
+}
+
 .threadInfo {
-	padding: 10px 10px 10px 5px;
+	padding: 10px 10px 10px 10px;
 }
 
 .threadImg {
@@ -145,10 +148,9 @@ body {
 .userdata {
 	overflow: hidden;
 	padding-bottom: 10px;
-	border-bottom: 1px solid rgb(200, 200, 200);
+	/*border-bottom: 1px solid rgb(200, 200, 200);*/
 	padding: 10px;
-	margin-bottom: 20px;
-	background-color: rgb(240, 240, 240);
+	/*background-color: rgb(240, 240, 240);*/
 }
 
 .userdata img {
@@ -164,6 +166,10 @@ body {
 	text-align: center;
 }
 
+.usertext {
+	float: left;
+}
+
 span.username {
 	font-weight: bold;
 }
@@ -173,7 +179,8 @@ span.userinfo, span.postdate {
 }
 
 .postData {
-	padding: 10px 10px 20px 10px;
+	min-height: 40px;
+	padding: 15px 10px 15px 10px;
 }
 
 .postData img {
@@ -182,8 +189,7 @@ span.userinfo, span.postdate {
 
 .postRatings {
 	overflow: hidden;
-	padding: 5px;
-	background-color: rgb(240, 240, 240);
+	padding: 5px 10px 5px 10px;
 }
 
 .rating {
@@ -218,6 +224,31 @@ span.userinfo, span.postdate {
 	padding: 10px 0px 10px 0px;
 	position: relative;
 	top: 1px;
+}
+
+.postcontrols {
+	float: right;
+}
+
+.editPostButton, .ratePostButton {
+	padding: 2px;
+	color: black;
+	background-color: #EEE;
+	border: 1px solid #AAA;
+	font-weight: bold;
+	font-size: 0.7em;
+	width: 40px;
+	margin-bottom: 12px;
+}
+
+.quotePostButton {
+	padding: 2px;
+	color: black;
+	background-color: #EEE;
+	border: 1px solid #AAA;
+	font-weight: bold;
+	font-size: 0.7em;
+	width: 40px;
 }
 
 /* FP Stylings below this line, god help you */

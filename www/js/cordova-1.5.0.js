@@ -519,6 +519,11 @@ document.addEventListener = function(evt, handler, capture) {
     } else if (typeof documentEventHandlers[e] != 'undefined') {
       documentEventHandlers[e].subscribe(handler);
     } else {
+    	//dhaval - override the backbutton on event registration
+    	if (e === 'backbutton') {
+    		var exec = require('cordova/exec')
+            exec(null, null, "App", "overrideBackbutton", [true]);
+        }
       m_document_addEventListener.call(document, evt, handler, capture);
     }
 };
@@ -585,6 +590,20 @@ var cordova = {
      * Method to fire event from native code
      */
     fireDocumentEvent: function(type, data) {
+    	
+        //dhaval - dispatch the backbutton event old way
+    	if(type == "backbutton"){
+			var e = document.createEvent('Events');
+		    e.initEvent(type);
+		    if (data) {
+		        for (var i in data) {
+		            e[i] = data[i];
+		        }
+		    }
+		    document.dispatchEvent(e);
+			return;
+		}
+    	
       var evt = createEvent(type, data);
       if (typeof documentEventHandlers[type] != 'undefined') {
         documentEventHandlers[type].fire(evt);
@@ -4838,4 +4857,3 @@ window.cordova = require('cordova');
     }
 
 }(window));
-

@@ -9,11 +9,13 @@
 		<script type="text/javascript" charset="utf-8" src="js/fp-api.js"></script>
 		<script type="text/javascript" charset="utf-8">
 			$(document).ready(function() {
-				var fp = new FPInterface();
-				if (!fp.authed)
-				{
-					fp.getLoginPage();
-				}
+				//document.addEventListener("deviceready", function() {
+					var fp = new FPInterface();
+					if (!fp.authed)
+					{
+						fp.getLoginPage();
+					}
+				//}, false);
 			});
 		</script>
 	</head>
