@@ -1,15 +1,14 @@
 Added:
-- Thread/forum page navigation (Hexxeh)
-- Back button (Code by Hexxeh, icon by kopimi)
-- "_ New Posts!" notification
-- Locked/Stickied thread styling
-- Push Notifications for iOS (Hexxeh)
-- Auto-login (Hexxeh)
+- Underlined usernames of online users (Thanks to Hexxeh for API extension)
+- Disabled new post field on locked threads (Thanks to Hexxeh for API extension)
+- Added hardware support for back-button (Android and Blackberry confirmed)
+- Post gradients to indicate post status (Old, new, my post)
+- Landscape support for Android (Not shown in current repo)
+- App saves state so you can exit/reopen the app and remain on the same page without reloading
+- Quote/Rate/Edit buttons (Non-functioning)
 
 Fixed:
-- Bug which caused thread data to be output twice
-
-Changed:
-- Removed redundant code (getSubforum removed), getForum now has support for 
-  pages and subforums (Hexxeh)
-- Changed padding for list items to make better use of limited screen space
+- 1px padding surrounding posts
+- Login system more efficient, only sends an auth request when necessary (Thanks to Hexxeh for theory)
+- Another "duplicating content" bug which caused post field and post ratings to be output twice.
+- Fixed not returning to most recent page of thread after replying
