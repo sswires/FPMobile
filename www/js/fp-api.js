@@ -1,6 +1,6 @@
 function FPInterface()
 {
-	this.apiURL = "http://sandbox.facepun.ch/";
+	this.apiURL = "http://api.facepun.ch/";
 	this.apiKey = false;
 	this.authed = false;
 	this.username = false;
@@ -8,9 +8,11 @@ function FPInterface()
 	this.userid = false;
 	this.pagestack = new Array();
 	this.forums = new Array();
+	this.shouldAutologin = true;
+	this.postRatingKeys = Array();
 	
 	this.SUPPORT_PUSH = false; // Does target device support Airship Push notifications?
-	this.SUPPORT_BACKBUTTON = false; // Does the device have a hardware back-button?
+	this.SUPPORT_BACKBUTTON = true; // Does the device have a hardware back-button?
 	
 	var fp = this;
 	
@@ -43,11 +45,29 @@ function FPInterface()
 		$("#replyButton").attr("value", "Posting...");
 	});
 	
+	$(".ratePostButton").live('click', function() {
+		fp.openRatingsDialogue(this.getAttribute("post"));
+	});
+	
+	$(".ratingsListEntry").live('click', function() {
+		fp.showLoading();
+		fp.submitRating(this.getAttribute("rating"), this.getAttribute("post"), this.getAttribute("key"));
+	});
+	
+	$(".quotePostButton").live('click', function() {
+		fp.quotePost(this.getAttribute("post"), this.getAttribute("username"));
+	});
+	
 	// Back button listeners
 	if (this.SUPPORT_BACKBUTTON)
 	{
 		document.addEventListener("backbutton", function() {
-			if (fp.parentForum != "top")
+			if (fp.tempPageContent != false)
+			{
+				$("#main").html(fp.tempPageContent);
+				fp.tempPageContent = false;
+			}
+			else if (fp.parentForum != "top")
 			{
 				fp.parentForum = fp.getForumByID(fp.parentForum);
 				var newpage = fp.pagestack.pop();
@@ -61,13 +81,17 @@ function FPInterface()
 		}, false);
 	}
 	
-	$("#backbutton").live('click', function() {
-		if (fp.parentForum != "top")
+	$(".backbutton").live('click', function() {
+		if (fp.tempPageContent != false)
+		{
+			$("#main").html(fp.tempPageContent);
+			fp.tempPageContent = false;
+		}
+		else if (fp.parentForum != "top")
 		{
 			fp.parentForum = fp.getForumByID(fp.parentForum);
 			var newpage = fp.pagestack.pop();
 			fp.getForum(fp.parentForum, newpage);
-			console.log("newforum");
 		}
 		else
 		{
@@ -153,10 +177,14 @@ FPInterface.prototype.hideLoading = function()
 	$("#loadingWrapper").html(""); // Empty the wrapper, no more effect, no more content
 }
 
+// the login() method actually authenticates with the server,
+// the attemptLogin() method just fetches the front page and assumes
+// your login data is correct. if your login info fails, we just call login()
+// to authenticate and figure out what is wrong
 FPInterface.prototype.login = function(user, pass)
 {
 	this.username = user;
-	this.password = pass;
+	this.password = hex_md5(pass);
 	var fp = this;
 	
 	this.showLoading();
@@ -191,6 +219,10 @@ FPInterface.prototype.login = function(user, pass)
 	});
 }
 
+// the login() method actually authenticates with the server,
+// the attemptLogin() method just fetches the front page and assumes
+// your login data is correct. if your login info fails, we just call login()
+// to authenticate and figure out what is wrong
 FPInterface.prototype.attemptLogin = function()
 {
 	var user = $("#usernameInput").val();
@@ -218,7 +250,7 @@ FPInterface.prototype.getLoginPage = function()
 	var password_html = '';
 	var autologin = false;
 	
-	if (typeof Storage !== "undefined")
+	if (this.shouldAutologin == true && typeof Storage !== "undefined")
 	{
 		if (localStorage.username && localStorage.password)
 		{
@@ -228,13 +260,20 @@ FPInterface.prototype.getLoginPage = function()
 		}
 	}
 	
-	var content = "<div id='loginBox'><img src='img/logo.png' alt=''/>Username:<br/><input type='text' id='usernameInput' class='textinput'" + username_html + "/><br/>Password:<br/><input type='password' id='passwordInput' class='textinput'" + password_html + "/><br/><input type='submit' value='Login' id='loginButton' class='button' style='padding: 10px; margin-top: 5px;'/><span id='loginError'></span></div>";
+	var content = "<div id='loginWrapper'><div id='loginBox'><img src='img/logo.png' alt=''/>Username:<br/><input type='text' id='usernameInput' class='textinput'" + username_html + "/><br/>Password:<br/><input type='password' id='passwordInput' class='textinput'" + password_html + "/><br/><input type='submit' value='Login' id='loginButton' class='button' style='padding: 10px; margin-top: 5px;'/><span id='loginError'></span></div></div>";
 	var fp = this;
 	
 	$("#main").html(content);
 	
 	$("#loginButton").click(function() {
-		fp.attemptLogin();
+		if (fp.shouldAutologin == true)
+		{
+			fp.login($("#usernameInput").val(), $("#passwordInput").val());
+		}
+		else
+		{
+			fp.attemptLogin();
+		}
 	});
 	
 	if (autologin)
@@ -279,18 +318,18 @@ FPInterface.prototype.viewFrontPage = function()
 		$.each(val["forums"], function(key, val) {
 			if (toggle)
 			{
-				$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "' style='background-color: rgb(245, 245, 245);'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
+				$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "' style='background-color: rgb(250, 250, 250);'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td class='forumName'>" + val.name + "</td></tr>");
 			}
 			else
 			{
 				if (borderTop)
 				{
-					$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "' style='border: none;'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
+					$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "' style='border: none;'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td class='forumName'>" + val.name + "</td></tr>");
 					borderTop = false;
 				}
 				else
 				{
-					$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td>" + val.name + "</td></tr>");
+					$("#cat" + category).append("<tr class='forum' forum='" + val.id + "' category='" + category + "'><td class='forumImg'><img src='img/forum/" + val.id + ".png' alt=''/></td><td class='forumName'>" + val.name + "</td></tr>");
 				}
 			}
 			
@@ -354,37 +393,6 @@ FPInterface.prototype.getForum = function(forum, page)
 	{
 		parent = "top";
 	}
-	
-	if (typeof forum["forums"] != "undefined")
-	{
-		fp.parentForum = parent;
-		$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + parent + "'>Subforums</div><table class='forumList' id='subforums'></div>");
-		
-		// Loop through subforums and display them!
-		var toggle = false; // Used as a toggle switch to make every other entry a different color
-		var borderTop = true; // One-time switch used to make the top list element have no borders
-		$.each(forum["forums"], function(key, val) {
-			if (toggle)
-			{
-				$("#subforums").append("<tr class='forum' forum='" + val.id + "' style='background-color: rgb(245, 245, 245);'><td>" + val.name + "</td></tr>");
-			}
-			else
-			{
-				if (borderTop)
-				{
-					$("#subforums").append("<tr class='forum' forum='" + val.id + "' style='border: none;'><td>" + val.name + "</td></tr>");
-					borderTop = false;
-				}
-				else
-				{
-					$("#subforums").append("<tr class='forum' forum='" + val.id + "'><td>" + val.name + "</td></tr>");
-				}
-			}
-			
-			toggle = !toggle; // Reverse the toggle
-		});
-	}
-	
 
 	var madeThreadCat = false;
 	
@@ -392,11 +400,41 @@ FPInterface.prototype.getForum = function(forum, page)
 	this.APIRequest("getthreads", {"forum_id" : forumID, "page" : page}, 0, function(data) {
 		console.log("Successfully loaded threads from forum: " + forumID);
 		
+		if (typeof forum["forums"] != "undefined")
+		{
+			fp.parentForum = parent;
+			$("#main").append("<div class='categoryWrapper'><div class='backbutton' parentforum='" + parent + "'>Subforums</div><table class='forumList' id='subforums'></div>");
+			
+			// Loop through subforums and display them!
+			var toggle = false; // Used as a toggle switch to make every other entry a different color
+			var borderTop = true; // One-time switch used to make the top list element have no borders
+			$.each(forum["forums"], function(key, val) {
+				if (toggle)
+				{
+					$("#subforums").append("<tr class='forum' forum='" + val.id + "' style='background-color: rgb(250, 250, 250);'><td class='subforumName'>" + val.name + "</td></tr>");
+				}
+				else
+				{
+					if (borderTop)
+					{
+						$("#subforums").append("<tr class='forum' forum='" + val.id + "' style='border: none;'><td class='subforumName'>" + val.name + "</td></tr>");
+						borderTop = false;
+					}
+					else
+					{
+						$("#subforums").append("<tr class='forum' forum='" + val.id + "'><td class='subforumName'>" + val.name + "</td></tr>");
+					}
+				}
+				
+				toggle = !toggle; // Reverse the toggle
+			});
+		}
+		
 		fp.parentForum = parent;
 		if (!madeThreadCat)
 		{
 			// Create a new category with the name of the forum
-			$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
+			$("#main").append("<div class='categoryWrapper'><div class='backbutton' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
 			
 			var toggle = false; // Used as a toggle switch to make every other entry a different color
 			var borderTop = true; // One-time switch used to make the top list element have no borders
@@ -414,7 +452,7 @@ FPInterface.prototype.getForum = function(forum, page)
 				}
 				else if (toggle)
 				{
-					style = "background-color: rgb(245, 245, 245);";
+					style = "background-color: rgb(250, 250, 250);";
 				}
 				
 				if (borderTop)
@@ -502,10 +540,12 @@ FPInterface.prototype.getThread = function(thread, page)
 		fp.parentForum = data.forumid;
 		
 		// Create a new category with the name of the forum
-		$("#main").append("<div class='categoryWrapper'><div id='backbutton' class='category' parentforum='" + data.forumid + "'>" + data.title + "</div><table class='postList' id='posts'></div>");
+		$("#main").append("<div class='categoryWrapper'><div class='backbutton' parentforum='" + data.forumid + "'>" + data.title + "</div><table class='postList' id='posts'></div>");
 		
 		// Loop through posts and display them
 		$.each(data["posts"], function(key, val) {
+			fp.postRatingKeys[val.id] = val.ratingkeys;
+			
 			var postBG = "";
 			var nameStyle = "";
 			
@@ -531,32 +571,32 @@ FPInterface.prototype.getThread = function(thread, page)
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
 				}
 			}
 			else
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
 				}
 			}
 			
 			if (val.username.toLowerCase() == fp.username.toLowerCase()) // If it's our post
 			{
-				$("#controls" + val.id).append("<input type='submit' value='Edit' class='editPostButton' id='edit" + val.id + "'/><br/><input type='submit' value='Quote' class='quotePostButton' id='quote" + val.id + "'/>");
+				$("#controls" + val.id).append("<input type='submit' value='Edit' class='editPostButton' post='" + val.id + "'/><br/><input type='submit' value='Quote' class='quotePostButton' post='" + val.id + "' username='" + val.username + "'/>");
 			}
 			else
 			{
-				$("#controls" + val.id).append("<input type='submit' value='Rate' class='ratePostButton' id='rate" + val.id + "'/><br/><input type='submit' value='Quote' class='quotePostButton' id='quote" + val.id + "'/>");
+				$("#controls" + val.id).append("<input type='submit' value='Rate' class='ratePostButton' post='" + val.id + "'/><br/><input type='submit' value='Quote' class='quotePostButton' post='" + val.id + "' username='" + val.username + "'/>");
 			}
 			
 			var postID = val.id;
@@ -613,4 +653,105 @@ FPInterface.prototype.submitPost = function(content, thread, page)
 	{
 		console.log("Failed to make post: Content/ThreadID invalid!");
 	}
+}
+
+FPInterface.prototype.openRatingsDialogue = function(post)
+{
+	var fp = this;
+	fp.tempPageContent = $("#main").html();
+	
+	$("#main").html("<div class='categoryWrapper'><div class='backbutton'>Ratings</div></div><div id='ratingsScreen'><table id='ratingsTable'></table></div>");
+	
+	var ratingArray = Array();
+	ratingArray["agree"] = "Agree";
+	ratingArray["disagree"] = "Disagree";
+	ratingArray["funny"] = "Funny";
+	ratingArray["winner"] = "Winner";
+	ratingArray["zing"] = "Zing";
+	ratingArray["informative"] = "Informative";
+	ratingArray["friendly"] = "Friendly";
+	ratingArray["useful"] = "Useful";
+	ratingArray["optimistic"] = "Optimistic";
+	ratingArray["artistic"] = "Artistic";
+	ratingArray["late"] = "Late";
+	ratingArray["dumb"] = "Dumb";
+	ratingArray["lua_helper"] = "Lua Helper";
+	ratingArray["lua_king"] = "Lua King";
+	ratingArray["moustache"] = "Moustache";
+	ratingArray["programming_king"] = "Programming King";
+	ratingArray["smarked"] = "Smarked";
+	ratingArray["mapping_king"] = "Mapping King";
+	
+	var toggle = false;
+	for (key in fp.postRatingKeys[post])
+	{
+		if (toggle)
+		{
+			$("#ratingsTable").append("<tr key='" + fp.postRatingKeys[post][key] + "' rating='" + key + "' post='" + post + "' class='ratingsListEntry'><td class='ratingsListImage'><img src='img/rating/" + key + ".png'></td><td class='ratingsListName'>" + ratingArray[key] + "</td></tr>");
+		}
+		else
+		{
+			$("#ratingsTable").append("<tr style='background-color: rgb(250, 250, 250);'key='" + fp.postRatingKeys[post][key] + "' rating='" + key + "' post='" + post + "' class='ratingsListEntry'><td class='ratingsListImage'><img src='img/rating/" + key + ".png'></td><td class='ratingsListName'>" + ratingArray[key] + "</td></tr>");
+		}
+		
+		toggle = !toggle;
+	}
+}
+
+FPInterface.prototype.submitRating = function(rating, post, key)
+{
+	var fp = this;
+	$("#main").html("");
+	
+	this.APIRequest("rate", {"post_id" : post, "rating" : rating, "key" : key}, 0, function(data) {
+		if (data.rating == "OK")
+		{
+			console.log("Rating successful on post: " + post);
+		}
+		else
+		{
+			console.log("Rating failed on post: " + post);
+		}
+		
+		$("#main").html(fp.tempPageContent);
+		fp.tempPageContent = false;
+		fp.hideLoading();
+	});
+}
+
+FPInterface.prototype.quotePost = function(post, username)
+{
+	var fp = this;
+	
+	var postdata = $("#postData" + post).html();
+	//postdata = postdata.replace(/<div class=\"quote\">.*<\/div>/gi, "");
+	
+	// Parse links
+	while (postdata.search(/<a href=\".*\">.*<\/a>/i) != -1)
+	{
+		var url = postdata.replace(/.*<a href=\"/i, "");
+		url = url.replace(/\".*/gi, "");
+		
+		var text = postdata.replace(/.*<a href=\".*\" target=\"_blank\">/i, "");
+		text = text.replace(/<.*/i, "");
+		
+		postdata = postdata.replace(/<a href=\".*\">.*<\/a>/i, "[URL=" + url + "]" + text + "[/URL]");
+	}
+	
+	// Parse images
+	while (postdata.search(/<img src=\".*\"\>/i) != -1)
+	{
+		var url = postdata.replace(/.*<img src=\"/i, "");
+		url = url.replace(/\".*/gi, "");
+		console.log(url);
+		
+		postdata = postdata.replace(/<img src=\".*\"\>/i, "[IMG]" + url + "[/IMG]");
+	}
+	
+	postdata = postdata.replace(/<br>/gi, "\n");
+	postdata = postdata.replace(/</gi, "[");
+	postdata = postdata.replace(/>/gi, "]");
+
+	$("#replyField").html("[QUOTE=" + username + ";" + post + "]" + postdata + "[/QUOTE]\n\n");
+	window.location = "#replyField";
 }

@@ -1,14 +1,16 @@
 body {
 	margin: 0px;
 	font-family: "Arial", sans-serif;
-	background-color: rgb(235, 235, 235);
+	background-color: rgb(204, 0, 0);
+	background-image: url('img/bg.png');
+	background-position: center;
+	background-attachment: fixed;
+	background-repeat: no-repeat;
 }
 
-#backbutton {
-	background-image: url('img/back.png');
-	background-repeat: no-repeat;
-	background-position: left center;
-	padding-left: 40px;
+#main {
+	width: 100%;
+	height: 100%;
 }
 
 #loadingWrapper {
@@ -25,15 +27,37 @@ body {
 	opacity: 0.7;
 }
 
+#ratingsTable {
+	width: 100%;
+	border-collapse: collapse;
+}
+
+#ratingsScreen {
+	background-color: rgb(255, 255, 255);
+}
+
+#loginWrapper {
+	width: 100%;
+	height: 245px;
+	margin-top: 50%;
+	position: absolute;
+	left: 0px;
+	top: -122px;
+	font-size: 0.9em;
+	font-weight: bold;
+	color: rgb(80, 80, 80);
+	background-color: rgb(204, 0, 0);
+}
+
 #loginBox {
 	width: 90%;
 	max-width: 300px;
 	margin-left: auto;
 	margin-right: auto;
-	margin-top: 50px;
 	font-size: 0.9em;
 	font-weight: bold;
-	color: rgb(80, 80, 80);
+	color: rgb(255, 255, 255);
+	text-shadow: 1px 1px 0px rgb(150, 0, 0);
 }
 
 #loginBox img {
@@ -54,8 +78,47 @@ body {
 	color: rgb(204, 0, 0);
 }
 
+#replyForm {
+	width: 100%;
+	background-color: rgb(204, 0, 0);
+}
+
+#replyField {
+	width: 100%;
+	padding: 10px;
+	height: 150px;
+	clear: both;
+	border-left: 3px solid rgb(204, 0, 0);
+	border-right: 3px solid rgb(204, 0, 0);
+	border-top: 1px solid rgb(204, 0, 0);
+	border-bottom: 1px solid rgb(204, 0, 0);
+}
+
+#replyButton {
+	width: 100%;
+	padding: 10px 0px 10px 0px;
+	position: relative;
+	top: 1px;
+}
+
+#ratingsScreen tr {
+	color: rgb(80, 80, 80);
+	border-bottom: 2px solid rgb(220, 220, 220);
+	width: 100%;
+	overflow: hidden;
+}
+
+#ratingsScreen td {
+	font-size: 0.9em;
+}
+
+.ratingsListImage {
+	padding: 10px;
+	width: 20px;
+}
+
 .textinput {
-	border: 1px solid rgb(160, 160, 160);
+	border: 2px solid rgb(150, 0, 0);
 	margin-bottom: 10px;
 	color: rgb(80, 80, 80);
 }
@@ -69,6 +132,7 @@ body {
 	color: rgb(255, 255, 255);
 	outline: 1px solid rgb(128, 0, 0);
 	border: 1px solid rgb(240, 0, 0);
+	text-shadow: 1px 1px 0px rgb(150, 0, 0);
 }
 
 .loadingImg {
@@ -86,8 +150,21 @@ body {
 	background-color: white;
 }
 
+.backbutton {
+	background-image: url('img/back.png');
+	background-repeat: no-repeat;
+	background-position: left center;
+	background-color: rgb(180, 0, 0);
+	padding: 5px 5px 5px 40px;
+	text-align: center;
+	font-family: "Tahoma", "Arial", sans-serif;
+	font-weight: bold;
+	font-size: 1.2em;
+	color: rgb(255, 255, 255);
+}
+
 .category {
-	background-color: rgb(204, 0, 0);
+	background-color: rgb(180, 0, 0);
 	padding: 5px;
 	text-align: center;
 	font-family: "Tahoma", "Arial", sans-serif;
@@ -98,7 +175,7 @@ body {
 
 .forumList, .threadList, .postList {
 	border-collapse: collapse;
-	font-size: 0.9em;
+	font-size: 0.8em;
 	width: 100%;
 }
 
@@ -111,7 +188,16 @@ body {
 	border-top: 2px solid rgb(220, 220, 220);
 }
 
-.forum td, .subforum td {
+.forumName, .subforumName {
+	padding: 10px;
+}
+
+.forumImg {
+	width: 25px;
+	padding: 10px 0px 10px 10px;
+}
+
+.subforum td {
 	padding: 10px;
 }
 
@@ -128,15 +214,12 @@ body {
 	padding: 10px 3px 10px 10px;
 }
 
-.forumImg {
-	width: 25px;
-	padding-right: 0px;
-}
-
 .newposts {
 	font-size: 0.7em;
 	color: red;
 	font-weight: bold;
+	position: relative;
+	top: 2px;
 }
 
 .post {
@@ -162,7 +245,7 @@ body {
 	width: 50px;
 	height: 50px;
 	float: left;
-	margin-right: 15px;
+	margin-right: 10px;
 	text-align: center;
 }
 
@@ -203,29 +286,6 @@ span.userinfo, span.postdate {
 	height: 12px;
 }
 
-#replyForm {
-	width: 100%;
-	background-color: rgb(204, 0, 0);
-}
-
-#replyField {
-	width: 100%;
-	padding: 10px;
-	height: 150px;
-	clear: both;
-	border-left: 3px solid rgb(204, 0, 0);
-	border-right: 3px solid rgb(204, 0, 0);
-	border-top: 1px solid rgb(204, 0, 0);
-	border-bottom: 1px solid rgb(204, 0, 0);
-}
-
-#replyButton {
-	width: 100%;
-	padding: 10px 0px 10px 0px;
-	position: relative;
-	top: 1px;
-}
-
 .postcontrols {
 	float: right;
 }
@@ -234,7 +294,7 @@ span.userinfo, span.postdate {
 	padding: 2px;
 	color: black;
 	background-color: #EEE;
-	border: 1px solid #AAA;
+	border: 2px solid #AAA;
 	font-weight: bold;
 	font-size: 0.7em;
 	width: 40px;
@@ -245,7 +305,7 @@ span.userinfo, span.postdate {
 	padding: 2px;
 	color: black;
 	background-color: #EEE;
-	border: 1px solid #AAA;
+	border: 2px solid #AAA;
 	font-weight: bold;
 	font-size: 0.7em;
 	width: 40px;
@@ -270,7 +330,7 @@ span.highlight {
 
 .quote {
 	margin: 10px 10px 15px 10px;
-	border: 1px solid #888;
+	border: 2px solid #888;
 	display: table;
 }
 
@@ -296,7 +356,7 @@ span.highlight {
 .bbcode_code {
 	margin-bottom: 15px;
 	padding: 6px;
-	border: 1px inset;
+	border: 2px inset;
 	text-align: left;
 	overflow: scroll;
 	direction: ltr;

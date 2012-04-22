@@ -1,14 +1,11 @@
 Added:
-- Underlined usernames of online users (Thanks to Hexxeh for API extension)
-- Disabled new post field on locked threads (Thanks to Hexxeh for API extension)
-- Added hardware support for back-button (Android and Blackberry confirmed)
-- Post gradients to indicate post status (Old, new, my post)
-- Landscape support for Android (Not shown in current repo)
-- App saves state so you can exit/reopen the app and remain on the same page without reloading
-- Quote/Rate/Edit buttons (Non-functioning)
+- Post rating functionality
+- Various UI changes
+- "View Thread" layout changed
 
 Fixed:
-- 1px padding surrounding posts
-- Login system more efficient, only sends an auth request when necessary (Thanks to Hexxeh for theory)
-- Another "duplicating content" bug which caused post field and post ratings to be output twice.
-- Fixed not returning to most recent page of thread after replying
+- Various bugs
+
+WIP:
+- Quoting is included in this update, however it is not fully functional
+  and it is recommended that you do not deploy this version to the end user.
