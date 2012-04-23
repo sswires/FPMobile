@@ -1,0 +1,24 @@
+Bugs:
+	- (Android) WebView rendering reduces image quality and distorts 2px lines sometimes.
+
+	- [code] and similar code layout elements breaks page layout by stretching out the page
+	  until the code has all been displayed on one line. This seriously needs fixing!
+
+	- Page background sometimes becomes distorted and will render off center or
+	  even just render fragments of the Facepunch logo. This seems to have something to do
+	  with scrolling, because scrolling while an off-center logo is displayed snaps
+	  it back into place.
+
+Features:
+	
+	- Quoting. Currently quoting "works" but it needs some more regex work to convert HTML
+	  post elements to properly quotable BBCode and plain text.
+
+	- Post editing. The "Edit" button is already in place, all that needs to be done is
+	  making it open an "Edit Post" textbox and sending the updated post to the API server.
+
+	- Ticker support
+
+	- Profile view
+
+	- Private messaging
