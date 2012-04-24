@@ -24,7 +24,7 @@ function FPInterface()
 			page = this.getAttribute("pages");
 		}
 		
-		fp.getThread(this.getAttribute("thread"), page);
+		fp.getThread(this.getAttribute("thread"), page );
 	});
 	
 	$(".forum").live('click', function() {
@@ -161,7 +161,7 @@ FPInterface.prototype.APIRequest = function(action, get, post, callback)
 	}
 }
 
-FPInterface.prototype.showLoading = function()
+FPInterface.prototype.showLoading = function(reason)
 {
 	console.log("Loading..");
 	$("#loadingWrapper").width("100%");
@@ -470,32 +470,19 @@ FPInterface.prototype.getForum = function(forum, page)
 					borderTop = false;
 				}
 				
-				if (style != false)
-				{
-					var status = "status='" + val.status + "'";
-					var hasNewPosts = " ";
-					var newposts = "";
-					if (typeof val.newposts != "undefined")
-					{
-						hasNewPosts = " hasNewPosts='true' ";
-						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
-					}
+				
+				var status = "status='" + val.status + "'";
+				var hasNewPosts = " ";
+				var newposts = "";
+				var styleAppend = (style != false) ? "style='" + style + "'>" : "";
 					
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "style='" + style + "'><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
-				}
-				else
+				if (typeof val.newposts != "undefined")
 				{
-					var status = "status='" + val.status + "'";
-					var hasNewPosts = " ";
-					var newposts = "";
-					if (typeof val.newposts != "undefined")
-					{
-						hasNewPosts = " hasNewPosts='true' ";
-						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
-					}
-					
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
+					hasNewPosts = " hasNewPosts='true' ";
+					newposts = "- <span class='newposts'>" + val.newposts + " new post" + ( val.newposts != "1" ? "s" : "" ) + "!</span>";
 				}
+				
+				$("#threads").append( "<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + styleAppend + "><td class='threadInfo'><div class='threadTitle'>" + val.title + "</div><div class='threadMeta'>" + val.author + " " + newposts + "</span></td></tr>");
 				
 				toggle = !toggle; // Reverse the toggle
 			});
@@ -723,35 +710,14 @@ FPInterface.prototype.quotePost = function(post, username)
 {
 	var fp = this;
 	
-	var postdata = $("#postData" + post).html();
-	//postdata = postdata.replace(/<div class=\"quote\">.*<\/div>/gi, "");
-	
-	// Parse links
-	while (postdata.search(/<a href=\".*\">.*<\/a>/i) != -1)
-	{
-		var url = postdata.replace(/.*<a href=\"/i, "");
-		url = url.replace(/\".*/gi, "");
-		
-		var text = postdata.replace(/.*<a href=\".*\" target=\"_blank\">/i, "");
-		text = text.replace(/<.*/i, "");
-		
-		postdata = postdata.replace(/<a href=\".*\">.*<\/a>/i, "[URL=" + url + "]" + text + "[/URL]");
-	}
-	
-	// Parse images
-	while (postdata.search(/<img src=\".*\"\>/i) != -1)
-	{
-		var url = postdata.replace(/.*<img src=\"/i, "");
-		url = url.replace(/\".*/gi, "");
-		console.log(url);
-		
-		postdata = postdata.replace(/<img src=\".*\"\>/i, "[IMG]" + url + "[/IMG]");
-	}
-	
-	postdata = postdata.replace(/<br>/gi, "\n");
-	postdata = postdata.replace(/</gi, "[");
-	postdata = postdata.replace(/>/gi, "]");
+	// replaced with the getquote API action instead
+	this.APIRequest("getquote", {"post_id": post}, 0, function(data) {
 
-	$("#replyField").html("[QUOTE=" + username + ";" + post + "]" + postdata + "[/QUOTE]\n\n");
-	window.location = "#replyField";
+		if( data.quote )
+		{
+			$("#replyField").text( data.quote );
+			window.location = "#replyField";
+		}
+
+	} );
 }
