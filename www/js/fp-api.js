@@ -730,7 +730,10 @@ FPInterface.prototype.editPost = function(post)
 {
 	var fp = this;
 	var postContent = $("#postData" + post);
+	var editButton = $("#post" + post + " .editPostButton" );
 	var originalContents = postContent.html();
+	
+	editButton.attr("disabled","disabled");
 	
 	this.APIRequest("getedit", {"post_id": post}, 0, function(data) {
 		postContent.html( "<textarea data:post='" + post + "' class='editTextArea'>" + data.edit + "</textarea><input type='button' value='Edit Post' class='button postEdit'/><input type='button' value='Cancel' class='button cancelEdit' />" );
@@ -740,6 +743,7 @@ FPInterface.prototype.editPost = function(post)
 			
 			fp.APIRequest( "doedit", 0, {"post_id": post, "message": postContent.find(".editTextArea").text()}, function(data) {
 				alert( data );
+				editButton.removeAttr("disabled");
 			} );
 			
 		} );
@@ -747,6 +751,7 @@ FPInterface.prototype.editPost = function(post)
 		// cancel edit
 		postContent.find( ".cancelEdit" ).click( function() {
 			postContent.html( originalContents );
+			editButton.removeAttr("disabled");
 		} );
 	} );
 }
