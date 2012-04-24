@@ -318,6 +318,11 @@ span.userinfo, span.postdate {
 	margin-bottom: 12px;
 }
 
+.editTextarea {
+	width: 100%;
+	height: 100px;
+}
+
 .quotePostButton {
 	padding: 2px;
 	color: black;

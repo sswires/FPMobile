@@ -58,6 +58,10 @@ function FPInterface()
 		fp.quotePost(this.getAttribute("post"), this.getAttribute("username"));
 	});
 	
+	$(".editPostButton").live('click', function() {
+		fp.editPost(this.getAttribute("post"));
+	});
+	
 	// Back button listeners
 	if (this.SUPPORT_BACKBUTTON)
 	{
@@ -434,7 +438,7 @@ FPInterface.prototype.getForum = function(forum, page)
 		if (!madeThreadCat)
 		{
 			// Create a new category with the name of the forum
-			$("#main").append("<div class='categoryWrapper'><div class='backbutton' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
+			$("#main").append("<div class='categoryWrapper topBar'><div class='backbutton' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
 			
 			var toggle = false; // Used as a toggle switch to make every other entry a different color
 			var borderTop = true; // One-time switch used to make the top list element have no borders
@@ -719,5 +723,30 @@ FPInterface.prototype.quotePost = function(post, username)
 			window.location = "#replyField";
 		}
 
+	} );
+}
+
+FPInterface.prototype.editPost = function(post)
+{
+	var fp = this;
+	var postContent = $("#postData" + post);
+	var originalContents = postContent.html();
+	
+	this.APIRequest("getedit", {"post_id": post}, 0, function(data) {
+		postContent.html( "<textarea data:post='" + post + "' class='editTextArea'>" + data.edit + "</textarea><input type='button' value='Edit Post' class='button postEdit'/><input type='button' value='Cancel' class='button cancelEdit' />" );
+		
+		// do the edit
+		postContent.find( ".postEdit" ).click( function() {
+			
+			fp.APIRequest( "doedit", 0, {"post_id": post, "message": postContent.find(".editTextArea").text()}, function(data) {
+				alert( data );
+			} );
+			
+		} );
+		
+		// cancel edit
+		postContent.find( ".cancelEdit" ).click( function() {
+			postContent.html( originalContents );
+		} );
 	} );
 }
