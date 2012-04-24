@@ -19,6 +19,4 @@ Features:
 
 	- Ticker support
 
-	- Profile view
-
 	- Private messaging
