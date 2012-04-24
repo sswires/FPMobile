@@ -562,22 +562,22 @@ FPInterface.prototype.getThread = function(thread, page)
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div></td></tr>");
 				}
 			}
 			else
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div></td></tr>");
 				}
 			}
 			
