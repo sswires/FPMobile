@@ -65,24 +65,26 @@ function FPInterface()
 	// Back button listeners
 	if (this.SUPPORT_BACKBUTTON)
 	{
-		document.addEventListener("backbutton", function() {
-			if (fp.tempPageContent != false)
-			{
-				$("#main").html(fp.tempPageContent);
-				fp.tempPageContent = false;
-			}
-			else if (fp.parentForum != "top")
-			{
-				fp.parentForum = fp.getForumByID(fp.parentForum);
-				var newpage = fp.pagestack.pop();
-				fp.getForum(fp.parentForum, newpage);
-			}
-			else
-			{
-				fp.pagestack.pop();
-				fp.viewFrontPage();
-			}
-		}, true);
+		document.addEventListener("deviceready", function() {
+			document.addEventListener("backbutton", function() {
+				if (fp.tempPageContent != false)
+				{
+					$("#main").html(fp.tempPageContent);
+					fp.tempPageContent = false;
+				}
+				else if (fp.parentForum != "top")
+				{
+					fp.parentForum = fp.getForumByID(fp.parentForum);
+					var newpage = fp.pagestack.pop();
+					fp.getForum(fp.parentForum, newpage);
+				}
+				else
+				{
+					fp.pagestack.pop();
+					fp.viewFrontPage();
+				}
+			}, true);
+		}, false );
 	}
 	
 	$(".backbutton").live('click', function() {
