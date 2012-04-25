@@ -8,15 +8,17 @@
 		<script type="text/javascript" charset="utf-8" src="js/cordova-1.6.1.js"></script>
 		<script type="text/javascript" charset="utf-8" src="js/fp-api.js"></script>
 		<script type="text/javascript" charset="utf-8">
-			$(document).ready(function() {
-				//document.addEventListener("deviceready", function() {
-					var fp = new FPInterface();
-					if (!fp.authed)
-					{
-						fp.getLoginPage();
-					}
-				//}, false);
-			});
+			function deviceReady()
+			{
+				var fp = new FPInterface();
+				
+				if (!fp.authed)
+				{
+					fp.getLoginPage();
+				}
+			}
+			
+			document.addEventListener("deviceready", deviceReady, false );
 		</script>
 	</head>
 	<body>

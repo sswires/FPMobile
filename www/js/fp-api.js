@@ -82,7 +82,7 @@ function FPInterface()
 				fp.pagestack.pop();
 				fp.viewFrontPage();
 			}
-		}, false);
+		}, true);
 	}
 	
 	$(".backbutton").live('click', function() {
