@@ -343,6 +343,8 @@ FPInterface.prototype.viewFrontPage = function()
 		});
 	});
 	
+	$("#main").append("<div class='categoryWrapper'><div class='category'>User Options</div><table class='forumList userPreferences'><td class='forum userOption'>Log out</td></table></div>" ); 
+	
 	console.log("Successfully loaded front page");
 	this.hideLoading();
 }
@@ -734,7 +736,7 @@ FPInterface.prototype.editPost = function(post)
 	var postContent = $("#postData" + post);
 	var editButton = $("#post" + post + " .editPostButton" );
 	var originalContents = postContent.html();
-	
+
 	editButton.attr("disabled","disabled");
 	
 	this.APIRequest("getedit", {"post_id": post}, 0, function(data) {
@@ -742,9 +744,12 @@ FPInterface.prototype.editPost = function(post)
 		
 		// do the edit
 		postContent.find( ".postEdit" ).click( function() {
+		
+			var newPost = postContent.find(".editTextArea").val();
+			postContent.html( originalContents + "<p><img class='editLoadingImg' id='editLoading" + post + "' src='img/loading.gif'/> Sending edit</p>" );
 			
-			fp.APIRequest( "doedit", 0, {"post_id": post, "message": postContent.find(".editTextArea").text()}, function(data) {
-				alert( data );
+			fp.APIRequest( "doedit", 0, {"post_id": post, "message": newPost}, function(data) {
+				$("#editLoading"+post).css("display", "none" );
 				editButton.removeAttr("disabled");
 			} );
 			
