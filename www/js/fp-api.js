@@ -24,7 +24,7 @@ function FPInterface()
 			page = this.getAttribute("pages");
 		}
 		
-		fp.getThread(this.getAttribute("thread"), page);
+		fp.getThread(this.getAttribute("thread"), page );
 	});
 	
 	$(".forum").live('click', function() {
@@ -58,27 +58,33 @@ function FPInterface()
 		fp.quotePost(this.getAttribute("post"), this.getAttribute("username"));
 	});
 	
+	$(".editPostButton").live('click', function() {
+		fp.editPost(this.getAttribute("post"));
+	});
+	
 	// Back button listeners
 	if (this.SUPPORT_BACKBUTTON)
 	{
-		document.addEventListener("backbutton", function() {
-			if (fp.tempPageContent != false)
-			{
-				$("#main").html(fp.tempPageContent);
-				fp.tempPageContent = false;
-			}
-			else if (fp.parentForum != "top")
-			{
-				fp.parentForum = fp.getForumByID(fp.parentForum);
-				var newpage = fp.pagestack.pop();
-				fp.getForum(fp.parentForum, newpage);
-			}
-			else
-			{
-				fp.pagestack.pop();
-				fp.viewFrontPage();
-			}
-		}, false);
+		document.addEventListener("deviceready", function() {
+			document.addEventListener("backbutton", function() {
+				if (fp.tempPageContent != false)
+				{
+					$("#main").html(fp.tempPageContent);
+					fp.tempPageContent = false;
+				}
+				else if (fp.parentForum != "top")
+				{
+					fp.parentForum = fp.getForumByID(fp.parentForum);
+					var newpage = fp.pagestack.pop();
+					fp.getForum(fp.parentForum, newpage);
+				}
+				else
+				{
+					fp.pagestack.pop();
+					fp.viewFrontPage();
+				}
+			}, true);
+		}, false );
 	}
 	
 	$(".backbutton").live('click', function() {
@@ -161,7 +167,7 @@ FPInterface.prototype.APIRequest = function(action, get, post, callback)
 	}
 }
 
-FPInterface.prototype.showLoading = function()
+FPInterface.prototype.showLoading = function(reason)
 {
 	console.log("Loading..");
 	$("#loadingWrapper").width("100%");
@@ -337,6 +343,8 @@ FPInterface.prototype.viewFrontPage = function()
 		});
 	});
 	
+	$("#main").append("<div class='categoryWrapper'><div class='category'>User Options</div><table class='forumList userPreferences'><td class='forum userOption'>Log out</td></table></div>" ); 
+	
 	console.log("Successfully loaded front page");
 	this.hideLoading();
 }
@@ -434,7 +442,7 @@ FPInterface.prototype.getForum = function(forum, page)
 		if (!madeThreadCat)
 		{
 			// Create a new category with the name of the forum
-			$("#main").append("<div class='categoryWrapper'><div class='backbutton' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
+			$("#main").append("<div class='categoryWrapper topBar'><div class='backbutton' parentforum='" + parent + "'>" + data.title + "</div><table class='threadList' id='threads'></div>");
 			
 			var toggle = false; // Used as a toggle switch to make every other entry a different color
 			var borderTop = true; // One-time switch used to make the top list element have no borders
@@ -470,32 +478,19 @@ FPInterface.prototype.getForum = function(forum, page)
 					borderTop = false;
 				}
 				
-				if (style != false)
-				{
-					var status = "status='" + val.status + "'";
-					var hasNewPosts = " ";
-					var newposts = "";
-					if (typeof val.newposts != "undefined")
-					{
-						hasNewPosts = " hasNewPosts='true' ";
-						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
-					}
+				
+				var status = "status='" + val.status + "'";
+				var hasNewPosts = " ";
+				var newposts = "";
+				var styleAppend = (style != false) ? "style='" + style + "'>" : "";
 					
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "style='" + style + "'><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
-				}
-				else
+				if (typeof val.newposts != "undefined")
 				{
-					var status = "status='" + val.status + "'";
-					var hasNewPosts = " ";
-					var newposts = "";
-					if (typeof val.newposts != "undefined")
-					{
-						hasNewPosts = " hasNewPosts='true' ";
-						newposts = "<span class='newposts'>" + val.newposts + " new posts!</span>";
-					}
-					
-					$("#threads").append("<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + "><td class='threadInfo'>" + val.title + "<br/>" + newposts + "</td></tr>");
+					hasNewPosts = " hasNewPosts='true' ";
+					newposts = "- <span class='newposts'>" + val.newposts + " new post" + ( val.newposts != "1" ? "s" : "" ) + "!</span>";
 				}
+				
+				$("#threads").append( "<tr class='thread' thread='" + val.id + "' pages='" + val.pages + "' " + status + hasNewPosts + styleAppend + "><td class='threadInfo'><div class='threadTitle'>" + val.title + "</div><div class='threadMeta'>" + val.author + " " + newposts + "</span></td></tr>");
 				
 				toggle = !toggle; // Reverse the toggle
 			});
@@ -571,22 +566,22 @@ FPInterface.prototype.getThread = function(thread, page)
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='avatar'><img src='http://facepunch.com/" + val.avatar + "' alt=''/></div><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div></td></tr>");
 				}
 			}
 			else
 			{
 				if (typeof val.ratings != "undefined")
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div><div class='postRatings' id='ratings" + val.id + "'></div></td></tr>");
 				}
 				else
 				{
-					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="http://facepunch.com/fp/emoot/') + "</div></td></tr>");
+					$("#posts").append("<tr class='post' id='post" + val.id + "'" + postBG + "><td><div class='userdata'><div class='usertext'><span class='username'" + nameStyle + ">" + val.username_html + "</span><br/><span class='userinfo'>" + val.postcount + " Posts</span><br/><span class='postdate'>" + val.time + "</span></div><div class='postcontrols' id='controls" + val.id + "'></div></div><div class='postData' id='postData" + val.id + "'>" + val.message.replace('<img src="/fp/emoot/', '<img src="img/emotes/') + "</div></td></tr>");
 				}
 			}
 			
@@ -723,35 +718,47 @@ FPInterface.prototype.quotePost = function(post, username)
 {
 	var fp = this;
 	
-	var postdata = $("#postData" + post).html();
-	//postdata = postdata.replace(/<div class=\"quote\">.*<\/div>/gi, "");
-	
-	// Parse links
-	while (postdata.search(/<a href=\".*\">.*<\/a>/i) != -1)
-	{
-		var url = postdata.replace(/.*<a href=\"/i, "");
-		url = url.replace(/\".*/gi, "");
-		
-		var text = postdata.replace(/.*<a href=\".*\" target=\"_blank\">/i, "");
-		text = text.replace(/<.*/i, "");
-		
-		postdata = postdata.replace(/<a href=\".*\">.*<\/a>/i, "[URL=" + url + "]" + text + "[/URL]");
-	}
-	
-	// Parse images
-	while (postdata.search(/<img src=\".*\"\>/i) != -1)
-	{
-		var url = postdata.replace(/.*<img src=\"/i, "");
-		url = url.replace(/\".*/gi, "");
-		console.log(url);
-		
-		postdata = postdata.replace(/<img src=\".*\"\>/i, "[IMG]" + url + "[/IMG]");
-	}
-	
-	postdata = postdata.replace(/<br>/gi, "\n");
-	postdata = postdata.replace(/</gi, "[");
-	postdata = postdata.replace(/>/gi, "]");
+	// replaced with the getquote API action instead
+	this.APIRequest("getquote", {"post_id": post}, 0, function(data) {
 
-	$("#replyField").html("[QUOTE=" + username + ";" + post + "]" + postdata + "[/QUOTE]\n\n");
-	window.location = "#replyField";
+		if( data.quote )
+		{
+			$("#replyField").text( data.quote );
+			window.location = "#replyField";
+		}
+
+	} );
+}
+
+FPInterface.prototype.editPost = function(post)
+{
+	var fp = this;
+	var postContent = $("#postData" + post);
+	var editButton = $("#post" + post + " .editPostButton" );
+	var originalContents = postContent.html();
+
+	editButton.attr("disabled","disabled");
+	
+	this.APIRequest("getedit", {"post_id": post}, 0, function(data) {
+		postContent.html( "<textarea data:post='" + post + "' class='editTextArea'>" + data.edit + "</textarea><input type='button' value='Edit Post' class='button postEdit'/><input type='button' value='Cancel' class='button cancelEdit' />" );
+		
+		// do the edit
+		postContent.find( ".postEdit" ).click( function() {
+		
+			var newPost = postContent.find(".editTextArea").val();
+			postContent.html( originalContents + "<p><img class='editLoadingImg' id='editLoading" + post + "' src='img/loading.gif'/> Sending edit</p>" );
+			
+			fp.APIRequest( "doedit", 0, {"post_id": post, "message": newPost}, function(data) {
+				$("#editLoading"+post).css("display", "none" );
+				editButton.removeAttr("disabled");
+			} );
+			
+		} );
+		
+		// cancel edit
+		postContent.find( ".cancelEdit" ).click( function() {
+			postContent.html( originalContents );
+			editButton.removeAttr("disabled");
+		} );
+	} );
 }
