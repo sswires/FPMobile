@@ -385,3 +385,7 @@ span.highlight {
 	background: #F2F6F8 none repeat-x;
 	font-size: 13.333px;
 }
+
+img, pre {
+	max-width: 300px;
+}

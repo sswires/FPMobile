@@ -740,17 +740,22 @@ FPInterface.prototype.editPost = function(post)
 	editButton.attr("disabled","disabled");
 	
 	this.APIRequest("getedit", {"post_id": post}, 0, function(data) {
-		postContent.html( "<textarea data:post='" + post + "' class='editTextArea'>" + data.edit + "</textarea><input type='button' value='Edit Post' class='button postEdit'/><input type='button' value='Cancel' class='button cancelEdit' />" );
+		postContent.html( "<textarea data:post='" + post + "' class='editTextArea'>" + data.edit + "</textarea><span class=\"editButtons\"><input type='button' value='Edit Post' class='button postEdit'/><input type='button' value='Cancel' class='button cancelEdit' /></span>" );
 		
 		// do the edit
 		postContent.find( ".postEdit" ).click( function() {
 		
 			var newPost = postContent.find(".editTextArea").val();
-			postContent.html( originalContents + "<p><img class='editLoadingImg' id='editLoading" + post + "' src='img/loading.gif'/> Sending edit</p>" );
+			postContent.find(".editButtons").html( "<img class='editLoadingImg' id='editLoading" + post + "' src='img/loading.gif'/> Sending edit" );
 			
 			fp.APIRequest( "doedit", 0, {"post_id": post, "message": newPost}, function(data) {
-				$("#editLoading"+post).css("display", "none" );
-				editButton.removeAttr("disabled");
+				postContent.find(".editButtons").html( "<img class='editLoadingImg' id='editLoading" + post + "' src='img/loading.gif'/> Retrieving post" );
+				
+				// retrieve the post that we just edited as HTML
+				fp.APIRequest( "getpost", {"post_id": post}, 0, function(pdata) {
+					editButton.removeAttr("disabled");
+					postContent.html( pdata.post.message );
+				} );
 			} );
 			
 		} );
